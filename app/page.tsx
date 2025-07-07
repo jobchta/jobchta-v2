@@ -1,7 +1,7 @@
 import { AuthButton } from '@/components/AuthButton'
 import DashboardLayout from '@/components/dashboard/DashboardLayout'
 import JobCard, { type Job } from '@/components/dashboard/JobCard'
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function Index() {
   const supabase = await createClient()
