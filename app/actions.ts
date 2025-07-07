@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-// This function is unchanged
+
 export async function createApplication(jobId: number) {
   const supabase = await createClient()
 
@@ -12,9 +12,10 @@ export async function createApplication(jobId: number) {
     return { error: 'You must be logged in to apply.' }
   }
 
+  // 1. Get user's profile and current credit count
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, credits')
     .eq('id', user.id)
     .single();
 
@@ -22,20 +23,38 @@ export async function createApplication(jobId: number) {
     return { error: 'You must complete your profile before applying.' };
   }
 
-  const { error } = await supabase.from('applications').insert({
+  // 2. Check if user has enough credits
+  if (profile.credits === null || profile.credits <= 0) {
+    return { error: 'You have no credits left.' };
+  }
+
+  // 3. Insert the application
+  const { error: appError } = await supabase.from('applications').insert({
     job_id: jobId,
     user_id: user.id,
   })
 
-  if (error) {
-    if (error.code === '23505') {
+  if (appError) {
+    if (appError.code === '23505') { // unique_violation
         return { error: 'You have already applied for this job.' };
     }
-    return { error: 'Could not apply for this job.' }
+    return { error: 'Could not submit application.' }
+  }
+
+  // 4. Decrement user's credits
+  const newCreditCount = profile.credits - 1;
+  const { error: creditError } = await supabase
+    .from('profiles')
+    .update({ credits: newCreditCount })
+    .eq('id', user.id);
+
+  if (creditError) {
+    console.error("CRITICAL: Failed to decrement credits for user:", user.id);
+    return { error: 'Application submitted, but failed to update credits.' };
   }
 
   revalidatePath('/')
-  return { success: 'Application submitted!' }
+  return { success: `Application submitted! ${newCreditCount} credits remaining.` }
 }
 
 // This function signature is updated
