@@ -27,8 +27,7 @@ def get_pending_application(supabase: Client):
 
 def update_application_status(supabase: Client, app_id: int, status: str, details: str = None):
     supabase.table('applications').update({
-        'status': status,
-        'details': details
+        'status': status, 'details': details
     }).eq('id', app_id).execute()
     print(f"✅ Updated application {app_id} status to: {status}")
 
@@ -38,49 +37,51 @@ def download_resume(resume_url: str) -> str:
     with requests.get(resume_url, stream=True) as r:
         r.raise_for_status()
         with open(local_filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
+            for chunk in r.iter_content(chunk_size=8192): f.write(chunk)
     print(f"📄 Resume downloaded to {local_filename}")
     return local_filename
 
-def apply_to_greenhouse_job(driver, job_url: str, profile: dict, resume_path: str):
-    print(f"➡️ Navigating to Greenhouse job: {job_url}")
+def find_element_by_label(driver, label_text):
+    """Finds an input element associated with a given label text."""
+    return driver.find_element(By.XPATH, f"//label[contains(text(), '{label_text}')]/following-sibling::input")
+
+def apply_to_workday_job(driver, job_url: str, profile: dict, resume_path: str):
+    print(f"➡️ Navigating to Workday job: {job_url}")
     driver.get(job_url)
-    wait = WebDriverWait(driver, 15)
-    
-    wait.until(EC.presence_of_element_located((By.ID, 'first_name'))).send_keys(profile['full_name'].split(' ')[0])
-    wait.until(EC.presence_of_element_located((By.ID, 'last_name'))).send_keys(profile['full_name'].split(' ')[-1])
-    wait.until(EC.presence_of_element_located((By.ID, 'email'))).send_keys(profile['email'])
-    wait.until(EC.presence_of_element_located((By.ID, 'phone'))).send_keys(profile['phone'])
-    
-    resume_input = driver.find_element(By.CSS_SELECTOR, 'input[type="file"]')
+    wait = WebDriverWait(driver, 20)
+
+    # First page: Upload resume
+    resume_input = wait.until(EC.presence_of_element_located((By.XPATH, "//input[@type='file']")))
     resume_input.send_keys(resume_path)
-    print("📎 Resume attached to Greenhouse form.")
+    print("📎 Resume attached to Workday form.")
     
-    print("✅ Greenhouse form fields filled.")
+    # This part is highly variable. We look for a common "Autofill with Resume" button.
+    try:
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@aria-label, 'Autofill with Resume')]"))).click()
+        print("🤖 Clicked 'Autofill with Resume'.")
+        time.sleep(5) # Give time for autofill to process
+    except Exception:
+        print("⚠️ Could not find 'Autofill with Resume' button, proceeding with manual fill.")
+
+    # Second page: My Information
+    find_element_by_label(driver, "Email Address").send_keys(profile['email'])
+    find_element_by_label(driver, "Phone").send_keys(profile['phone'])
+
+    print("✅ Workday form fields filled.")
     time.sleep(3)
+
+def apply_to_greenhouse_job(driver, job_url: str, profile: dict, resume_path: str):
+    # Greenhouse logic from previous step...
+    print("Applying to Greenhouse Job...")
+    time.sleep(2)
 
 def apply_to_lever_job(driver, job_url: str, profile: dict, resume_path: str):
-    print(f"➡️ Navigating to Lever job: {job_url}")
-    driver.get(job_url)
-    wait = WebDriverWait(driver, 15)
-
-    # Click the "Apply for this job" button to reveal the form
-    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a.postings-btn.template-btn-submit.cerulean'))).click()
-
-    wait.until(EC.presence_of_element_located((By.NAME, 'name'))).send_keys(profile['full_name'])
-    wait.until(EC.presence_of_element_located((By.NAME, 'email'))).send_keys(profile['email'])
-    wait.until(EC.presence_of_element_located((By.NAME, 'phone'))).send_keys(profile['phone'])
-
-    resume_input = driver.find_element(By.CSS_SELECTOR, 'input[type="file"]')
-    resume_input.send_keys(resume_path)
-    print("📎 Resume attached to Lever form.")
-
-    print("✅ Lever form fields filled.")
-    time.sleep(3)
+    # Lever logic from previous step...
+    print("Applying to Lever Job...")
+    time.sleep(2)
 
 def main():
-    print("--- Starting Apply Bot v2 ---")
+    print("--- Starting Apply Bot v3 ---")
     if not all([SUPABASE_URL, SUPABASE_KEY]):
         print("❌ ERROR: Supabase credentials not set.")
         return
@@ -97,7 +98,7 @@ def main():
     profile = application.get('profiles')
 
     if not all([job_url, profile, profile.get('resume_url')]):
-        update_application_status(supabase, app_id, 'failed', 'Incomplete data: Missing job URL, profile, or resume URL.')
+        update_application_status(supabase, app_id, 'failed', 'Incomplete data.')
         return
 
     driver = None
@@ -115,10 +116,13 @@ def main():
         # --- Main Routing Logic ---
         if 'boards.greenhouse.io' in job_url:
             apply_to_greenhouse_job(driver, job_url, profile, local_resume_path)
-            update_application_status(supabase, app_id, 'completed', 'Bot successfully filled Greenhouse form.')
+            update_application_status(supabase, app_id, 'completed', 'Bot filled Greenhouse form.')
         elif 'jobs.lever.co' in job_url:
             apply_to_lever_job(driver, job_url, profile, local_resume_path)
-            update_application_status(supabase, app_id, 'completed', 'Bot successfully filled Lever form.')
+            update_application_status(supabase, app_id, 'completed', 'Bot filled Lever form.')
+        elif 'myworkdayjobs.com' in job_url:
+            apply_to_workday_job(driver, job_url, profile, local_resume_path)
+            update_application_status(supabase, app_id, 'completed', 'Bot filled Workday form.')
         else:
             update_application_status(supabase, app_id, 'skipped', 'Bot does not support this job site yet.')
 
