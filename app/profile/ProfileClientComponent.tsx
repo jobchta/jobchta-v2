@@ -5,6 +5,7 @@ import { useFormState, useFormStatus } from 'react-dom'
 import { updateProfile } from "@/app/actions"
 import DashboardLayout from "@/components/dashboard/DashboardLayout"
 import Link from "next/link"
+import { type ComponentProps } from 'react'
 
 function SubmitButton() {
   const { pending } = useFormStatus()
@@ -22,6 +23,7 @@ function SubmitButton() {
 type Profile = {
   id: string;
   updated_at: string;
+  credits: number | null;
   full_name: string | null;
   email: string | null;
   phone: string | null;
@@ -33,7 +35,7 @@ export default function ProfileClientComponent({ user, profile }: { user: User, 
   const [state, formAction] = useFormState(updateProfile, initialState)
 
   return (
-    <DashboardLayout>
+    <DashboardLayout credits={profile?.credits ?? 0}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Your Profile</h1>
         <Link href="/" className="text-sm text-gray-400 hover:text-white">Back to Dashboard</Link>

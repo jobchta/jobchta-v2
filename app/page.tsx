@@ -9,18 +9,19 @@ export default async function Index() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
-    const { data: jobs, error } = await supabase
+    const { data: jobs } = await supabase
       .from('jobs')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(20)
 
-    if (error) {
-      console.error('Error fetching jobs:', error)
-    }
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('credits')
+      .single()
 
     return (
-      <DashboardLayout>
+      <DashboardLayout credits={profile?.credits ?? 0}>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Live Jobs Feed</h1>
           <AuthButton />
@@ -31,7 +32,7 @@ export default async function Index() {
               <JobCard key={job.id} job={job} />
             ))
           ) : (
-            <p className="text-gray-400">No jobs found. Run your scraper to populate the database.</p>
+            <p className="text-gray-400">No jobs found. Run your scraper.</p>
           )}
         </div>
       </DashboardLayout>

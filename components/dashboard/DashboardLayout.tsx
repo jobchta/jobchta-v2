@@ -1,21 +1,16 @@
+'use client'
+
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  let credits: number | null = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('credits')
-      .single();
-    credits = profile?.credits ?? 0;
-  }
-
+export default function DashboardLayout({ 
+  children, 
+  credits 
+}: { 
+  children: React.ReactNode,
+  credits: number | null 
+}) {
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white w-full">
       <div className="flex">
         {/* Sidebar Navigation */}
         <aside className="w-64 bg-gray-800 p-6 hidden md:block flex-col">
