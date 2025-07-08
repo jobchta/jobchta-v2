@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 
 export default function DashboardLayout({ 
@@ -21,6 +19,12 @@ export default function DashboardLayout({
                   Dashboard
                 </Link>
               </li>
+              {/* ADD THIS NEW LINK */}
+              <li className="mb-4">
+                <Link href="/applications" className="text-lg text-gray-400 hover:text-white">
+                  Applications
+                </Link>
+              </li>
               <li className="mb-4">
                 <Link href="/profile" className="text-lg text-gray-400 hover:text-white">
                   Profile
@@ -29,14 +33,12 @@ export default function DashboardLayout({
             </ul>
           </nav>
           
-          {/* Credit Display */}
           <div className="mt-auto">
             <p className="text-sm text-gray-400">Credits Remaining</p>
             <p className="text-2xl font-bold">{credits !== null ? credits : 'N/A'}</p>
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 p-8">
           {children}
         </main>
