@@ -11,7 +11,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 # Define your job search criteria
 SEARCH_QUERY = "software engineer"
-LOCATION = "Syracuse, NY"
+LOCATION = "Remote"
 
 # Define the target job sites
 TARGET_SITES = [

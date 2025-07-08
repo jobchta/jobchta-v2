@@ -20,19 +20,16 @@ export default async function Index({
     const searchQuery = searchParams?.q || '';
     const timeFilter = searchParams?.time;
 
-    // Start building the query
     let query = supabase
       .from('jobs')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(50); // Increased limit for filtering
+      .limit(50);
 
-    // Add search filter if it exists
     if (searchQuery) {
       query = query.ilike('title', `%${searchQuery}%`);
     }
 
-    // Add time filter if it exists
     if (timeFilter) {
       const now = new Date();
       let timeAgo;
@@ -48,13 +45,25 @@ export default async function Index({
       }
     }
 
-    // Execute the final query
     const { data: jobs } = await query;
     
     const { data: profile } = await supabase
       .from('profiles')
       .select('credits')
       .single();
+
+    // Helper to preserve existing filters when creating new links
+    const createFilterLink = (newFilter: { time?: string, q?: string }) => {
+      const params = new URLSearchParams();
+      if (searchQuery && newFilter.q === undefined) params.set('q', searchQuery);
+      if (timeFilter && newFilter.time === undefined) params.set('time', timeFilter);
+      
+      if (newFilter.q) params.set('q', newFilter.q);
+      if (newFilter.time) params.set('time', newFilter.time);
+      
+      const queryString = params.toString();
+      return queryString ? `/?${queryString}` : '/';
+    };
 
     return (
       <DashboardLayout credits={profile?.credits ?? 0}>
@@ -63,7 +72,6 @@ export default async function Index({
           <AuthButton />
         </div>
 
-        {/* Search & Filter UI */}
         <div className="mb-6 space-y-4">
           <form method="get" className="flex gap-2">
             <input
@@ -73,6 +81,7 @@ export default async function Index({
               placeholder="Search by job title..."
               className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white"
             />
+            {timeFilter && <input type="hidden" name="time" value={timeFilter} />}
             <button
               type="submit"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-md"
@@ -82,14 +91,13 @@ export default async function Index({
           </form>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-gray-400">Filter by:</span>
-            <Link href="/" className={!timeFilter ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>All</Link>
-            <Link href="/?time=hour" className={timeFilter === 'hour' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past Hour</Link>
-            <Link href="/?time=day" className={timeFilter === 'day' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past 24 Hours</Link>
-            <Link href="/?time=week" className={timeFilter === 'week' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past Week</Link>
+            <Link href={createFilterLink({ time: undefined })} className={!timeFilter ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>All</Link>
+            <Link href={createFilterLink({ time: 'hour' })} className={timeFilter === 'hour' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past Hour</Link>
+            <Link href={createFilterLink({ time: 'day' })} className={timeFilter === 'day' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past 24 Hours</Link>
+            <Link href={createFilterLink({ time: 'week' })} className={timeFilter === 'week' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past Week</Link>
           </div>
         </div>
 
-        {/* Job List */}
         <div className="space-y-4">
           {jobs && jobs.length > 0 ? (
             jobs.map((job: Job) => (
