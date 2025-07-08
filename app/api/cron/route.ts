@@ -5,19 +5,19 @@ import Spawner from 'chrome-aws-lambda'
 
 export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
-
+  
   console.log("Starting cron job: Scrape Jobs");
 
   try {
     const browser = await chromium.launch({
       args: Spawner.args,
-      executablePath: await Spawner.executablePath(),
-      headless: Spawner.headless,
+      executablePath: await Spawner.executablePath, // Corrected
+      headless: Spawner.headless, // Corrected
     })
-
+  
     const page = await browser.newPage()
     await page.goto('https://boards.greenhouse.io/airtable') // Example company
-
+  
     const jobs = await page.$$eval("div.opening", (elements) => 
       elements.map(el => ({
         title: (el.querySelector('a') as HTMLElement)?.innerText,
@@ -27,11 +27,11 @@ export async function GET() {
     )
 
     await browser.close()
-
+    
     if (jobs && jobs.length > 0) {
       const jobsToInsert = jobs.map(job => ({
         title: job.title,
-        company: 'Airtable', // Or extract dynamically
+        company: 'Airtable',
         location: job.location,
         url: job.url,
         source: 'greenhouse'
