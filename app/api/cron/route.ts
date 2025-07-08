@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { chromium } from 'playwright-core'
-import Spawner from 'chrome-aws-lambda'
+import Spawner from '@sparticuz/chrome-aws-lambda' // Corrected import
 
 export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
