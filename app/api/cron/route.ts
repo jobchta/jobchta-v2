@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import axios from 'axios'
 import * as cheerio from 'cheerio'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
   const scraperApiKey = process.env.SCRAPER_API_KEY;
