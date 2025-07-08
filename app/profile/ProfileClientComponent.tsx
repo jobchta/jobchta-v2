@@ -20,6 +20,7 @@ function SubmitButton() {
   )
 }
 
+// THIS IS THE CORRECTED TYPE DEFINITION
 type Profile = {
   id: string;
   updated_at: string;
@@ -28,6 +29,9 @@ type Profile = {
   email: string | null;
   phone: string | null;
   resume_url: string | null;
+  professional_summary: string | null; // Added
+  work_experiences: any | null;        // Added
+  skills: any | null;                  // Added
 } | null;
 
 export default function ProfileClientComponent({ user, profile }: { user: User, profile: Profile }) {
