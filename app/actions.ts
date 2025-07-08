@@ -58,25 +58,34 @@ export async function createApplication(jobId: number) {
 }
 
 // This function signature is updated
+// In app/actions.ts
 export async function updateProfile(
-
-
-
   previousState: { message: string },
   formData: FormData
 ) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { message: 'ERROR: You must be logged in to update your profile.' }
+  if (!user) { return { message: 'ERROR: You must be logged in.' } }
+
+  // Parse JSON data from the form, with error handling
+  let workExperiences, skills;
+  try {
+    const workExpStr = formData.get('workExperiences') as string;
+    workExperiences = workExpStr ? JSON.parse(workExpStr) : null;
+
+    const skillsStr = formData.get('skills') as string;
+    skills = skillsStr ? JSON.parse(skillsStr) : null;
+  } catch (e) {
+    return { message: 'ERROR: Invalid JSON format in Work Experiences or Skills.' };
   }
 
   const profileData = {
     full_name: formData.get('fullName') as string,
-    email: formData.get('email') as string,
     phone: formData.get('phone') as string,
-    resume_url: formData.get('resumeUrl') as string,
+    professional_summary: formData.get('professionalSummary') as string,
+    work_experiences: workExperiences,
+    skills: skills,
     updated_at: new Date(),
   }
 

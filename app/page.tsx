@@ -2,11 +2,15 @@ import { AuthButton } from '@/components/AuthButton'
 import DashboardLayout from '@/components/dashboard/DashboardLayout'
 import JobCard, { type Job } from '@/components/dashboard/JobCard'
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 
 export default async function Index({
   searchParams,
 }: {
-  searchParams?: { q?: string };
+  searchParams?: { 
+    q?: string;
+    time?: 'hour' | 'day' | 'week';
+  };
 }) {
   const supabase = await createClient()
 
@@ -14,18 +18,34 @@ export default async function Index({
 
   if (user) {
     const searchQuery = searchParams?.q || '';
+    const timeFilter = searchParams?.time;
 
     // Start building the query
     let query = supabase
       .from('jobs')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(50); // Increased limit for filtering
 
-    // If there is a search query, add a filter
+    // Add search filter if it exists
     if (searchQuery) {
-      // Use 'ilike' for case-insensitive search on the 'title' column
       query = query.ilike('title', `%${searchQuery}%`);
+    }
+
+    // Add time filter if it exists
+    if (timeFilter) {
+      const now = new Date();
+      let timeAgo;
+      if (timeFilter === 'hour') {
+        timeAgo = new Date(now.setHours(now.getHours() - 1)).toISOString();
+      } else if (timeFilter === 'day') {
+        timeAgo = new Date(now.setDate(now.getDate() - 1)).toISOString();
+      } else if (timeFilter === 'week') {
+        timeAgo = new Date(now.setDate(now.getDate() - 7)).toISOString();
+      }
+      if (timeAgo) {
+        query = query.gte('created_at', timeAgo);
+      }
     }
 
     // Execute the final query
@@ -43,15 +63,15 @@ export default async function Index({
           <AuthButton />
         </div>
 
-        {/* Search Form */}
-        <div className="mb-6">
+        {/* Search & Filter UI */}
+        <div className="mb-6 space-y-4">
           <form method="get" className="flex gap-2">
             <input
               type="text"
               name="q"
               defaultValue={searchQuery}
               placeholder="Search by job title..."
-              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white"
             />
             <button
               type="submit"
@@ -60,6 +80,13 @@ export default async function Index({
               Search
             </button>
           </form>
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-gray-400">Filter by:</span>
+            <Link href="/" className={!timeFilter ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>All</Link>
+            <Link href="/?time=hour" className={timeFilter === 'hour' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past Hour</Link>
+            <Link href="/?time=day" className={timeFilter === 'day' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past 24 Hours</Link>
+            <Link href="/?time=week" className={timeFilter === 'week' ? 'text-white font-bold' : 'text-gray-400 hover:text-white'}>Past Week</Link>
+          </div>
         </div>
 
         {/* Job List */}
