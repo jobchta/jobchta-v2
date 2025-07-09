@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 
 export default function DashboardLayout({ 
@@ -19,7 +21,6 @@ export default function DashboardLayout({
                   Dashboard
                 </Link>
               </li>
-              {/* ADD THIS NEW LINK */}
               <li className="mb-4">
                 <Link href="/applications" className="text-lg text-gray-400 hover:text-white">
                   Applications
@@ -28,6 +29,17 @@ export default function DashboardLayout({
               <li className="mb-4">
                 <Link href="/profile" className="text-lg text-gray-400 hover:text-white">
                   Profile
+                </Link>
+              </li>
+              {/* ADD THESE TWO NEW LINKS */}
+              <li className="mb-4">
+                <Link href="/pricing" className="text-lg text-gray-400 hover:text-white">
+                  Upgrade Plan
+                </Link>
+              </li>
+              <li className="mb-4">
+                <Link href="/buy-credits" className="text-lg text-gray-400 hover:text-white">
+                  Buy Credits
                 </Link>
               </li>
             </ul>
@@ -39,6 +51,7 @@ export default function DashboardLayout({
           </div>
         </aside>
 
+        {/* Main Content */}
         <main className="flex-1 p-8">
           {children}
         </main>
